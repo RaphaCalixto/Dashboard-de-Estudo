@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 20% 97%;
+    --foreground: 220 25% 12%;
+
+    --card: 40 15% 99%;
+    --card-foreground: 220 25% 12%;
+
+    --popover: 40 15% 99%;
+    --popover-foreground: 220 25% 12%;
+
+    --primary: 220 60% 35%;
+    --primary-foreground: 40 20% 97%;
+
+    --secondary: 35 80% 55%;
+    --secondary-foreground: 40 20% 97%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 35 80% 55%;
+    --accent-foreground: 40 20% 97%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 20% 97%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 220 60% 35%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 40 20% 97%;
+    --sidebar-primary: 35 80% 55%;
+    --sidebar-primary-foreground: 40 20% 97%;
+    --sidebar-accent: 220 25% 18%;
+    --sidebar-accent-foreground: 40 20% 97%;
+    --sidebar-border: 220 25% 20%;
+    --sidebar-ring: 35 80% 55%;
+
+    /* Subject colors */
+    --subject-math: 220 70% 50%;
+    --subject-portuguese: 340 65% 47%;
+    --subject-physics: 260 55% 50%;
+    --subject-chemistry: 160 60% 40%;
+    --subject-biology: 140 55% 42%;
+    --subject-logic: 30 80% 50%;
+    --subject-writing: 0 60% 45%;
+  }
+
+  .dark {
+    --background: 220 25% 8%;
+    --foreground: 40 15% 92%;
+    --card: 220 25% 11%;
+    --card-foreground: 40 15% 92%;
+    --popover: 220 25% 11%;
+    --popover-foreground: 40 15% 92%;
+    --primary: 220 60% 55%;
+    --primary-foreground: 220 25% 8%;
+    --secondary: 35 80% 55%;
+    --secondary-foreground: 220 25% 8%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 35 80% 55%;
+    --accent-foreground: 220 25% 8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 40 15% 92%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 220 60% 55%;
+    --sidebar-background: 220 30% 6%;
+    --sidebar-foreground: 40 15% 92%;
+    --sidebar-primary: 35 80% 55%;
+    --sidebar-primary-foreground: 220 25% 8%;
+    --sidebar-accent: 220 25% 12%;
+    --sidebar-accent-foreground: 40 15% 92%;
+    --sidebar-border: 220 25% 14%;
+    --sidebar-ring: 35 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer utilities {
+  .subject-math { background-color: hsl(var(--subject-math)); }
+  .subject-portuguese { background-color: hsl(var(--subject-portuguese)); }
+  .subject-physics { background-color: hsl(var(--subject-physics)); }
+  .subject-chemistry { background-color: hsl(var(--subject-chemistry)); }
+  .subject-biology { background-color: hsl(var(--subject-biology)); }
+  .subject-logic { background-color: hsl(var(--subject-logic)); }
+  .subject-writing { background-color: hsl(var(--subject-writing)); }
+}
