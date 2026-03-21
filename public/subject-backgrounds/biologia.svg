@@ -1,0 +1,23 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#EAF9EE"/>
+  <g opacity="0.22" stroke="#2FA34F" stroke-width="5" fill="none">
+    <path d="M560 110c80 20 90 110 10 170c-78 60-160 12-172-58c-12-70 52-129 162-112z"/>
+    <path d="M532 130c-10 60-26 108-62 156"/>
+    <path d="M590 146c-48 38-104 56-168 66"/>
+  </g>
+  <g opacity="0.8" fill="#2FA34F" font-family="Arial, sans-serif">
+    <text x="84" y="145" font-size="54">DNA • RNA</text>
+    <text x="84" y="220" font-size="48">célula | tecido | órgão</text>
+    <text x="84" y="295" font-size="48">ecossistema</text>
+    <text x="84" y="370" font-size="44">genética e evolução</text>
+  </g>
+  <g opacity="0.24" stroke="#2FA34F" stroke-width="6" fill="none">
+    <path d="M660 350c-18-30-18-60 0-90"/>
+    <path d="M700 350c-18-30-18-60 0-90"/>
+    <path d="M660 260c26 10 40 10 40 0"/>
+    <path d="M660 280c26 10 40 10 40 0"/>
+    <path d="M660 300c26 10 40 10 40 0"/>
+    <path d="M660 320c26 10 40 10 40 0"/>
+  </g>
+</svg>
+

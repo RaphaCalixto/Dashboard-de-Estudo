@@ -1,0 +1,21 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#E8FBF3"/>
+  <g opacity="0.25" fill="none" stroke="#1EA677" stroke-width="4">
+    <circle cx="560" cy="145" r="26"/>
+    <circle cx="640" cy="188" r="20"/>
+    <circle cx="520" cy="250" r="22"/>
+    <circle cx="690" cy="270" r="24"/>
+    <path d="M578 157l44 24M542 168l-16 62M662 202l18 49M542 250l124 18"/>
+  </g>
+  <g opacity="0.8" fill="#1EA677" font-family="Arial, sans-serif">
+    <text x="84" y="140" font-size="54">H₂SO₄ + NaOH</text>
+    <text x="84" y="215" font-size="48">pH = -log[H⁺]</text>
+    <text x="84" y="290" font-size="46">PV = nRT</text>
+    <text x="84" y="365" font-size="46">C₆H₁₂O₆ + O₂</text>
+  </g>
+  <g opacity="0.22" fill="#1EA677">
+    <path d="M640 338l34 68a18 18 0 0 1-16 26H590a18 18 0 0 1-16-26l34-68z"/>
+    <rect x="624" y="298" width="16" height="50" rx="8"/>
+  </g>
+</svg>
+

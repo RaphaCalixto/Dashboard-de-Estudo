@@ -1,0 +1,17 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#FFEAF3"/>
+  <g opacity="0.32" fill="none" stroke="#C42B6E" stroke-width="3">
+    <path d="M80 120h640M80 170h640M80 220h640M80 270h640M80 320h640M80 370h640"/>
+  </g>
+  <g opacity="0.82" fill="#C42B6E" font-family="Georgia, serif">
+    <text x="95" y="155" font-size="58">"Linguagem e sentido"</text>
+    <text x="95" y="245" font-size="48">sujeito • verbo • objeto</text>
+    <text x="95" y="325" font-size="44">coesão | coerência</text>
+    <text x="95" y="395" font-size="42">metáfora • ironia • análise</text>
+  </g>
+  <g opacity="0.2" fill="#C42B6E">
+    <path d="M620 95h110a30 30 0 0 1 30 30v220a30 30 0 0 1-30 30H620z"/>
+    <path d="M620 95h-90a30 30 0 0 0-30 30v220a30 30 0 0 0 30 30h90z"/>
+  </g>
+</svg>
+

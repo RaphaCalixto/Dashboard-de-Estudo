@@ -1,0 +1,16 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#EAF1FF"/>
+  <g opacity="0.35" stroke="#2A60D8" stroke-width="2" fill="none">
+    <path d="M40 80h720M40 160h720M40 240h720M40 320h720M40 400h720"/>
+    <path d="M120 40v420M240 40v420M360 40v420M480 40v420M600 40v420M720 40v420"/>
+  </g>
+  <g opacity="0.75" fill="#2A60D8" font-family="Arial, sans-serif">
+    <text x="80" y="130" font-size="62">x² + y² = r²</text>
+    <text x="90" y="230" font-size="54">sin(θ) = op/hip</text>
+    <text x="95" y="320" font-size="48">∫ f(x) dx</text>
+    <text x="95" y="400" font-size="52">π ≈ 3.14159</text>
+  </g>
+  <circle cx="640" cy="180" r="90" fill="#2A60D8" opacity="0.14"/>
+  <circle cx="640" cy="180" r="44" fill="none" stroke="#2A60D8" stroke-width="10" opacity="0.22"/>
+</svg>
+

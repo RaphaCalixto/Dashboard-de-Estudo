@@ -1,0 +1,19 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#FFF3E7"/>
+  <g opacity="0.22" stroke="#E18412" stroke-width="4" fill="none">
+    <rect x="500" y="104" width="110" height="56" rx="14"/>
+    <rect x="650" y="104" width="110" height="56" rx="14"/>
+    <rect x="575" y="220" width="110" height="56" rx="14"/>
+    <rect x="500" y="336" width="110" height="56" rx="14"/>
+    <rect x="650" y="336" width="110" height="56" rx="14"/>
+    <path d="M610 132h40M705 160v60M610 248h40M555 276v60M705 276v60"/>
+  </g>
+  <g opacity="0.82" fill="#E18412" font-family="Arial, sans-serif">
+    <text x="84" y="142" font-size="52">P ⇒ Q</text>
+    <text x="84" y="214" font-size="44">¬P ∨ Q</text>
+    <text x="84" y="286" font-size="44">(A ∧ B) → C</text>
+    <text x="84" y="358" font-size="42">101101 • padrões</text>
+    <text x="84" y="420" font-size="42">sequências lógicas</text>
+  </g>
+</svg>
+

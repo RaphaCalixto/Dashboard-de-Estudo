@@ -1,0 +1,17 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="500" fill="#FDECEE"/>
+  <g opacity="0.3" stroke="#C53036" stroke-width="3" fill="none">
+    <path d="M90 118h620M90 166h620M90 214h620M90 262h620M90 310h620M90 358h620M90 406h620"/>
+  </g>
+  <g opacity="0.75" fill="#C53036" font-family="Georgia, serif">
+    <text x="104" y="150" font-size="54">tese • repertório • argumento</text>
+    <text x="104" y="230" font-size="46">introdução • desenvolvimento</text>
+    <text x="104" y="305" font-size="48">conclusão</text>
+    <text x="104" y="382" font-size="42">coesão e proposta de intervenção</text>
+  </g>
+  <g opacity="0.22" fill="#C53036">
+    <path d="M640 100l54 54-168 168-54 18 18-54z"/>
+    <circle cx="690" cy="114" r="16"/>
+  </g>
+</svg>
+
