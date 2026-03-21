@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SiteLogo } from "@/components/SiteLogo";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -48,9 +49,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
-          </div>
+          <SiteLogo className="mx-auto mb-4 h-20 w-20" />
           <h1 className="font-display text-2xl font-bold text-foreground">
             Meu Caderno de Estudos
           </h1>

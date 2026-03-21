@@ -1,11 +1,13 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, BookOpen, Dumbbell, Search, FlaskConical, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { subjects } from "@/lib/subjects";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { subjects, type SubTopic } from "@/lib/subjects";
 import { generateId, type StudyNote, type ExerciseNote, type SubTopicData } from "@/lib/studyStore";
 import {
   fetchSubTopicData,
@@ -22,7 +24,13 @@ import { NoteCard } from "@/components/NoteCard";
 import { ExerciseEditor } from "@/components/ExerciseEditor";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { FormulasList } from "@/components/FormulasList";
+import { addCustomSubtopic, getCustomSubtopics, type CustomSubtopic } from "@/lib/customSubtopicsStore";
 import { toast } from "sonner";
+
+interface SubtopicOption extends SubTopic {
+  isCustom?: boolean;
+  showFormulas?: boolean;
+}
 
 export default function SubjectPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,13 +46,39 @@ export default function SubjectPage() {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
 
+  const [customSubtopics, setCustomSubtopics] = useState<CustomSubtopic[]>([]);
+  const [creatingSubtopic, setCreatingSubtopic] = useState(false);
+  const [newSubtopicName, setNewSubtopicName] = useState("");
+  const [newSubtopicWithFormulas, setNewSubtopicWithFormulas] = useState(false);
+
+  useEffect(() => {
+    if (!subject) return;
+    setCustomSubtopics(getCustomSubtopics(subject.id));
+  }, [subject]);
+
+  const allSubtopics = useMemo<SubtopicOption[]>(() => {
+    if (!subject) return [];
+    const customAsOptions: SubtopicOption[] = customSubtopics.map((item) => ({
+      id: item.id,
+      name: item.name,
+      isCustom: true,
+      showFormulas: item.showFormulas,
+    }));
+    return [...subject.subtopics, ...customAsOptions];
+  }, [subject, customSubtopics]);
+
+  const selectedCustomSubtopic = useMemo(
+    () => customSubtopics.find((st) => st.id === selectedSubtopic),
+    [customSubtopics, selectedSubtopic],
+  );
+
   const loadData = useCallback(async () => {
     if (!subject || !selectedSubtopic) return;
     setLoading(true);
     try {
       const data = await fetchSubTopicData(subject.id, selectedSubtopic);
       setSubtopicData(data);
-    } catch (err) {
+    } catch {
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
@@ -78,9 +112,25 @@ export default function SubjectPage() {
   }
 
   const showMathTools = ["matematica", "fisica", "quimica", "logica"].includes(subject.id);
-  const hasFormulas = allFormulas.some((f) => f.subjectId === subject.id);
+  const hasSubjectFormulas = allFormulas.some((f) => f.subjectId === subject.id);
+  const shouldShowFormulas = selectedCustomSubtopic ? selectedCustomSubtopic.showFormulas : hasSubjectFormulas;
   const Icon = subject.icon;
-  const currentSubtopic = subject.subtopics.find((s) => s.id === selectedSubtopic);
+  const currentSubtopic = allSubtopics.find((s) => s.id === selectedSubtopic);
+
+  const handleCreateSubtopic = () => {
+    try {
+      const created = addCustomSubtopic(subject.id, newSubtopicName, newSubtopicWithFormulas);
+      const updated = [created, ...customSubtopics];
+      setCustomSubtopics(updated);
+      setNewSubtopicName("");
+      setNewSubtopicWithFormulas(false);
+      setCreatingSubtopic(false);
+      setSelectedSubtopic(created.id);
+      toast.success("Subtópico criado com sucesso");
+    } catch (err: any) {
+      toast.error(err.message || "Não foi possível criar o subtópico");
+    }
+  };
 
   const handleAddTheory = async (title: string, content: string, images: string[]) => {
     if (!selectedSubtopic) return;
@@ -96,12 +146,12 @@ export default function SubjectPage() {
       await insertTheoryNote(subject.id, selectedSubtopic, note);
       setAddingTheory(false);
       await loadData();
-    } catch (err) {
+    } catch {
       toast.error("Erro ao salvar anotação");
     }
   };
 
-  const handleAddExercise = async (data: Omit<ExerciseNote, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleAddExercise = async (data: Omit<ExerciseNote, "id" | "createdAt" | "updatedAt">) => {
     if (!selectedSubtopic) return;
     const exercise: ExerciseNote = {
       ...data,
@@ -113,7 +163,7 @@ export default function SubjectPage() {
       await insertExercise(subject.id, selectedSubtopic, exercise);
       setAddingExercise(false);
       await loadData();
-    } catch (err) {
+    } catch {
       toast.error("Erro ao salvar exercício");
     }
   };
@@ -181,7 +231,7 @@ export default function SubjectPage() {
             )}
             <div className="space-y-3">
               {searchResults.map((r: any) => {
-                const st = subject.subtopics.find((s) => s.id === r.subtopicId);
+                const st = allSubtopics.find((s) => s.id === r.subtopicId);
                 return (
                   <div
                     key={r.item.id}
@@ -193,12 +243,12 @@ export default function SubjectPage() {
                     }}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">{st?.name}</Badge>
-                      <Badge variant="secondary" className="text-xs">{r.type === 'theory' ? 'Teoria' : 'Exercício'}</Badge>
+                      <Badge variant="outline" className="text-xs">{st?.name || "Subtópico"}</Badge>
+                      <Badge variant="secondary" className="text-xs">{r.type === "theory" ? "Teoria" : "Exercício"}</Badge>
                     </div>
                     <p className="font-medium text-sm text-foreground">{r.item.title}</p>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {'content' in r.item ? r.item.content : r.item.question}
+                      {"content" in r.item ? r.item.content : r.item.question}
                     </p>
                   </div>
                 );
@@ -210,16 +260,74 @@ export default function SubjectPage() {
         {/* Subtopics grid */}
         {!selectedSubtopic && !searchQuery.trim() && (
           <div>
-            <h2 className="font-display text-lg font-semibold text-foreground mb-4">Subtópicos</h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-semibold text-foreground">Subtópicos</h2>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setCreatingSubtopic((prev) => !prev)}
+              >
+                <Plus className="h-4 w-4" /> Novo subtópico
+              </Button>
+            </div>
+
+            {creatingSubtopic && (
+              <div className="mb-4 rounded-xl border border-border bg-card p-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-subtopic-name">Nome do novo subtópico</Label>
+                  <Input
+                    id="new-subtopic-name"
+                    value={newSubtopicName}
+                    onChange={(e) => setNewSubtopicName(e.target.value)}
+                    placeholder="Ex.: Matemática Financeira Avançada"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="new-subtopic-formulas"
+                    checked={newSubtopicWithFormulas}
+                    onCheckedChange={(checked) => setNewSubtopicWithFormulas(checked === true)}
+                  />
+                  <Label htmlFor="new-subtopic-formulas" className="cursor-pointer">
+                    Incluir aba de fórmulas (opcional)
+                  </Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleCreateSubtopic}
+                    disabled={!newSubtopicName.trim()}
+                  >
+                    Criar subtópico
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setCreatingSubtopic(false);
+                      setNewSubtopicName("");
+                      setNewSubtopicWithFormulas(false);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {subject.subtopics.map((st) => (
+              {allSubtopics.map((st) => (
                 <button
                   key={st.id}
                   onClick={() => setSelectedSubtopic(st.id)}
                   className="rounded-xl border border-border bg-card p-4 text-left hover:shadow-md transition-all hover:border-primary/30 group"
                 >
-                  <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">{st.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Clique para ver anotações e exercícios</p>
+                  <div className="mb-1 flex items-center gap-2">
+                    <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">{st.name}</h3>
+                    {st.isCustom && <Badge variant="outline" className="text-[10px]">Personalizado</Badge>}
+                    {st.isCustom && st.showFormulas && <Badge variant="secondary" className="text-[10px]">Fórmulas</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Clique para abrir teoria e exercícios</p>
                 </button>
               ))}
             </div>
@@ -236,7 +344,7 @@ export default function SubjectPage() {
               <TabsTrigger value="exercises" className="gap-1.5">
                 <Dumbbell className="h-4 w-4" /> Exercícios
               </TabsTrigger>
-              {hasFormulas && (
+              {shouldShowFormulas && (
                 <TabsTrigger value="formulas" className="gap-1.5">
                   <FlaskConical className="h-4 w-4" /> Fórmulas
                 </TabsTrigger>
@@ -276,13 +384,17 @@ export default function SubjectPage() {
                         try {
                           await updateTheoryNoteDb(note.id, { title, content, images });
                           await loadData();
-                        } catch { toast.error("Erro ao atualizar"); }
+                        } catch {
+                          toast.error("Erro ao atualizar");
+                        }
                       }}
                       onDelete={async () => {
                         try {
                           await deleteNoteDb(note.id);
                           await loadData();
-                        } catch { toast.error("Erro ao deletar"); }
+                        } catch {
+                          toast.error("Erro ao deletar");
+                        }
                       }}
                     />
                   ))}
@@ -323,13 +435,17 @@ export default function SubjectPage() {
                         try {
                           await updateExerciseDb(ex.id, updates);
                           await loadData();
-                        } catch { toast.error("Erro ao atualizar"); }
+                        } catch {
+                          toast.error("Erro ao atualizar");
+                        }
                       }}
                       onDelete={async () => {
                         try {
                           await deleteNoteDb(ex.id);
                           await loadData();
-                        } catch { toast.error("Erro ao deletar"); }
+                        } catch {
+                          toast.error("Erro ao deletar");
+                        }
                       }}
                     />
                   ))}
@@ -337,7 +453,7 @@ export default function SubjectPage() {
               )}
             </TabsContent>
 
-            {hasFormulas && (
+            {shouldShowFormulas && (
               <TabsContent value="formulas">
                 <FormulasList subjectId={subject.id} />
               </TabsContent>
@@ -348,3 +464,4 @@ export default function SubjectPage() {
     </div>
   );
 }
+

@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Ícone do Meu Caderno de Estudos</title>
+  <desc id="desc">Livro com diploma e capelo de formatura em um selo circular.</desc>
+  <circle cx="256" cy="256" r="256" fill="#F4C54F"/>
+
+  <path d="M140 176h260l36 190H112z" fill="#2EC4BE"/>
+  <path d="M147 176h120l-80 254H116z" fill="#2395A4"/>
+  <path d="M105 418h332v14H105z" fill="#20B2AA"/>
+
+  <path d="M136 268c52-20 176-20 225 0 19 8 28 24 23 41-4 16-19 26-37 26H173c-27 0-45-24-37-47z" fill="#F5F5F5"/>
+  <path d="M173 335h174c-10 8-20 12-35 12H192c-8 0-14-5-19-12z" fill="#E1E1E1"/>
+  <path d="M292 282c13 14 23 39 31 63l-31 32-32-46 32-49z" fill="#FDBB18"/>
+
+  <path d="M143 401h286c9 10 13 23 13 37v10H110v-10c0-14 5-27 13-37z" fill="#E9ECEF"/>
+  <rect x="110" y="444" width="332" height="10" fill="#D5D8DC"/>
+  <rect x="240" y="410" width="46" height="86" fill="#FF5A5F"/>
+  <path d="M240 496h46l-23-30z" fill="#F4C54F"/>
+
+  <path d="M52 154l124-51 156 50-156 53z" fill="#7F7D7D"/>
+  <path d="M176 206v42c16 12 40 17 70 17 29 0 62-5 84-17v-35z" fill="#6A6A6A"/>
+  <path d="M80 154l96-32" stroke="#F5F5F5" stroke-width="4" stroke-linecap="round"/>
+  <path d="M80 154v100" stroke="#F5F5F5" stroke-width="4"/>
+  <circle cx="80" cy="258" r="8" fill="#F5F5F5"/>
+  <path d="M80 266l-8 40h16z" fill="#FF5A5F"/>
+</svg>
+

@@ -1,9 +1,10 @@
-import { GraduationCap, Target, LogOut } from "lucide-react";
+import { Target, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { subjects } from "@/lib/subjects";
 import { SubjectCard } from "@/components/SubjectCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { SiteLogo } from "@/components/SiteLogo";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -21,9 +22,7 @@ export default function Index() {
           >
             <LogOut className="h-4 w-4" /> Sair
           </Button>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <GraduationCap className="h-8 w-8 text-primary-foreground" />
-          </div>
+          <SiteLogo className="mx-auto mb-4 h-20 w-20" />
           <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">
             Meu Caderno de Estudos
           </h1>

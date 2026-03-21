@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { subjects } from "@/lib/subjects";
 import { generateId, type ExamQuestion, type ExamResult } from "@/lib/studyStore";
 import { fetchExamResults, saveExamResultDb } from "@/lib/supabaseStore";
+import { getCustomSubtopics, type CustomSubtopic } from "@/lib/customSubtopicsStore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -23,11 +24,20 @@ export default function ExamPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [pastResults, setPastResults] = useState<ExamResult[]>([]);
+  const [customTopics, setCustomTopics] = useState<CustomSubtopic[]>([]);
 
   // Load past results
   useEffect(() => {
     fetchExamResults().then(setPastResults).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!selectedSubject) {
+      setCustomTopics([]);
+      return;
+    }
+    setCustomTopics(getCustomSubtopics(selectedSubject));
+  }, [selectedSubject]);
 
   // Timer
   useEffect(() => {
@@ -50,8 +60,13 @@ export default function ExamPage() {
 
     const subjectObj = subjects.find((s) => s.id === selectedSubject);
     const subjectName = subjectObj?.name || selectedSubject;
+    const availableTopics = [
+      ...(subjectObj?.subtopics || []),
+      ...customTopics.map((topic) => ({ id: topic.id, name: topic.name })),
+    ];
+
     const topicNames = selectedTopics
-      .map((tid) => subjectObj?.subtopics.find((st) => st.id === tid)?.name)
+      .map((tid) => availableTopics.find((st) => st.id === tid)?.name)
       .filter(Boolean);
 
     setPhase('loading');
@@ -131,6 +146,10 @@ export default function ExamPage() {
   };
 
   const subjectObj = selectedSubject ? subjects.find((s) => s.id === selectedSubject) : null;
+  const availableTopics = [
+    ...(subjectObj?.subtopics || []),
+    ...customTopics.map((topic) => ({ id: topic.id, name: topic.name })),
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,7 +203,7 @@ export default function ExamPage() {
               <div>
                 <h2 className="font-display text-lg font-semibold mb-3">Selecione os assuntos (opcional)</h2>
                 <div className="flex flex-wrap gap-2">
-                  {subjectObj.subtopics.map((st) => (
+                  {availableTopics.map((st) => (
                     <Badge
                       key={st.id}
                       variant={selectedTopics.includes(st.id) ? "default" : "outline"}
