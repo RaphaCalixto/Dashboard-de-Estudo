@@ -103,4 +103,26 @@
   .subject-biology { background-color: hsl(var(--subject-biology)); }
   .subject-logic { background-color: hsl(var(--subject-logic)); }
   .subject-writing { background-color: hsl(var(--subject-writing)); }
+
+  .note-editor figure[data-note-image-container],
+  .note-rich-content figure[data-note-image-container] {
+    margin: 0.5rem 0;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .note-editor img[data-note-inline-image],
+  .note-rich-content img[data-note-inline-image] {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
+
+  .note-editor img[data-note-selected="true"] {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.75);
+  }
+
+  .note-rich-content p + p {
+    margin-top: 0.35rem;
+  }
 }

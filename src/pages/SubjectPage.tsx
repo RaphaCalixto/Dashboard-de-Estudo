@@ -25,6 +25,7 @@ import { ExerciseEditor } from "@/components/ExerciseEditor";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { FormulasList } from "@/components/FormulasList";
 import { addCustomSubtopic, getCustomSubtopics, type CustomSubtopic } from "@/lib/customSubtopicsStore";
+import { noteHtmlToPlainText } from "@/lib/richNoteContent";
 import { toast } from "sonner";
 
 interface SubtopicOption extends SubTopic {
@@ -248,7 +249,7 @@ export default function SubjectPage() {
                     </div>
                     <p className="font-medium text-sm text-foreground">{r.item.title}</p>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {"content" in r.item ? r.item.content : r.item.question}
+                      {"content" in r.item ? noteHtmlToPlainText(r.item.content) : noteHtmlToPlainText(r.item.question)}
                     </p>
                   </div>
                 );
@@ -464,4 +465,3 @@ export default function SubjectPage() {
     </div>
   );
 }
-

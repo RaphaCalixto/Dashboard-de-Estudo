@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Pencil, Trash2, Clock, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckCircle2, Clock, Eye, EyeOff, Pencil, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExerciseEditor } from "./ExerciseEditor";
 import type { ExerciseNote } from "@/lib/studyStore";
+import { looksLikeHtml, sanitizeNoteHtml } from "@/lib/richNoteContent";
 
 interface ExerciseCardProps {
   exercise: ExerciseNote;
@@ -15,36 +16,50 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
   const [editing, setEditing] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showResolution, setShowResolution] = useState(false);
+  const date = new Date(exercise.updatedAt || exercise.createdAt);
+  const resultBorder = exercise.result === "correct" ? "border-green-200" : exercise.result === "incorrect" ? "border-red-200" : "border-border";
+  const questionIsHtml = looksLikeHtml(exercise.question);
+  const resolutionIsHtml = looksLikeHtml(exercise.resolution);
+  const safeQuestionHtml = useMemo(() => sanitizeNoteHtml(exercise.question), [exercise.question]);
+  const safeResolutionHtml = useMemo(() => sanitizeNoteHtml(exercise.resolution), [exercise.resolution]);
 
   if (editing) {
     return (
       <ExerciseEditor
         exercise={exercise}
         showMathTools={showMathTools}
-        onSave={(data) => { onUpdate(data); setEditing(false); }}
+        onSave={(data) => {
+          onUpdate(data);
+          setEditing(false);
+        }}
         onCancel={() => setEditing(false)}
-        onDelete={() => { onDelete(); setEditing(false); }}
+        onDelete={() => {
+          onDelete();
+          setEditing(false);
+        }}
       />
     );
   }
-
-  const date = new Date(exercise.updatedAt || exercise.createdAt);
-  const resultColor = exercise.result === 'correct' ? 'text-green-600' : exercise.result === 'incorrect' ? 'text-destructive' : '';
-  const resultBorder = exercise.result === 'correct' ? 'border-green-200' : exercise.result === 'incorrect' ? 'border-red-200' : 'border-border';
 
   return (
     <div className={`group rounded-xl border ${resultBorder} bg-card p-4 transition-shadow hover:shadow-md`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            {exercise.result === 'correct' && <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />}
-            {exercise.result === 'incorrect' && <XCircle className="h-4 w-4 text-destructive shrink-0" />}
+            {exercise.result === "correct" && <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />}
+            {exercise.result === "incorrect" && <XCircle className="h-4 w-4 text-destructive shrink-0" />}
             {exercise.title && (
               <h3 className="font-semibold text-foreground truncate">{exercise.title}</h3>
             )}
           </div>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">{exercise.question}</p>
+
+          {questionIsHtml ? (
+            <div className="note-rich-content text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeQuestionHtml }} />
+          ) : (
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{exercise.question}</p>
+          )}
         </div>
+
         <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
             <Pencil className="h-3.5 w-3.5" />
@@ -55,7 +70,7 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
         </div>
       </div>
 
-      {exercise.images.length > 0 && (
+      {!questionIsHtml && !resolutionIsHtml && exercise.images.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {exercise.images.map((img, i) => (
             <img key={i} src={img} alt={`Anexo ${i + 1}`} className="h-28 w-auto rounded-lg border border-border object-cover" />
@@ -82,7 +97,7 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
               variant="outline"
               size="sm"
               className="gap-1 text-xs text-green-600 hover:bg-green-50"
-              onClick={() => onUpdate({ result: 'correct' })}
+              onClick={() => onUpdate({ result: "correct" })}
             >
               <CheckCircle2 className="h-3 w-3" /> Acertei
             </Button>
@@ -90,7 +105,7 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
               variant="outline"
               size="sm"
               className="gap-1 text-xs text-destructive hover:bg-red-50"
-              onClick={() => onUpdate({ result: 'incorrect' })}
+              onClick={() => onUpdate({ result: "incorrect" })}
             >
               <XCircle className="h-3 w-3" /> Errei
             </Button>
@@ -111,7 +126,11 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
       {showResolution && exercise.resolution && (
         <div className="mt-3 rounded-lg bg-muted p-3">
           <p className="text-xs font-medium text-muted-foreground mb-1">Resolução:</p>
-          <p className="whitespace-pre-wrap text-sm text-foreground">{exercise.resolution}</p>
+          {resolutionIsHtml ? (
+            <div className="note-rich-content text-sm text-foreground" dangerouslySetInnerHTML={{ __html: safeResolutionHtml }} />
+          ) : (
+            <p className="whitespace-pre-wrap text-sm text-foreground">{exercise.resolution}</p>
+          )}
         </div>
       )}
 
