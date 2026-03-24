@@ -385,92 +385,94 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
         className="font-semibold text-base"
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground">FormataÃ§Ã£o</span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("bold")}>
-          <Bold className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("italic")}>
-          <Italic className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("underline")}>
-          <Underline className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertUnorderedList")}>
-          <List className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertOrderedList")}>
-          <ListOrdered className="h-3.5 w-3.5" />
-        </Button>
-        <select
-          value={fontSize}
-          onChange={(e) => applyFontSize(e.target.value)}
-          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-          aria-label="Tamanho do texto"
-        >
-          <option value="12">12</option>
-          <option value="14">14</option>
-          <option value="16">16</option>
-          <option value="18">18</option>
-          <option value="22">22</option>
-          <option value="28">28</option>
-        </select>
-
-        {showMathTools && (
-          <>
-            <MathSymbolPicker onInsert={insertSymbol} />
-            <SimpleCalculator />
-          </>
-        )}
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()}>
-          <ImagePlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Imagem</span>
-        </Button>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-      </div>
-
-      {selectedImageId && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-muted/30 p-2">
-          <span className="text-xs text-muted-foreground mr-1">Imagem selecionada</span>
-          <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => moveSelectedImage("up")}>
-            <ArrowUp className="h-3.5 w-3.5" /> Subir
+      <div className="sticky top-2 z-20 -mx-1 space-y-2 rounded-lg border border-border/70 bg-card/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">FormataÃ§Ã£o</span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("bold")}>
+            <Bold className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => moveSelectedImage("down")}>
-            <ArrowDown className="h-3.5 w-3.5" /> Descer
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("italic")}>
+            <Italic className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => resizeSelectedImage((selectedImageWidth || IMAGE_DEFAULT_WIDTH) - 20)}
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("underline")}>
+            <Underline className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertUnorderedList")}>
+            <List className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertOrderedList")}>
+            <ListOrdered className="h-3.5 w-3.5" />
+          </Button>
+          <select
+            value={fontSize}
+            onChange={(e) => applyFontSize(e.target.value)}
+            className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            aria-label="Tamanho do texto"
           >
-            <Minus className="h-3.5 w-3.5" />
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="22">22</option>
+            <option value="28">28</option>
+          </select>
+
+          {showMathTools && (
+            <>
+              <MathSymbolPicker onInsert={insertSymbol} />
+              <SimpleCalculator />
+            </>
+          )}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()}>
+            <ImagePlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Imagem</span>
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => resizeSelectedImage((selectedImageWidth || IMAGE_DEFAULT_WIDTH) + 20)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          <div className="flex items-center gap-2 min-w-[170px]">
-            <input
-              type="range"
-              min={IMAGE_MIN_WIDTH}
-              max={IMAGE_MAX_WIDTH}
-              step={10}
-              value={selectedImageWidth || IMAGE_DEFAULT_WIDTH}
-              onChange={(e) => resizeSelectedImage(Number(e.target.value))}
-              className="w-full accent-primary"
-            />
-            <span className="text-xs text-muted-foreground w-12 text-right">{selectedImageWidth || IMAGE_DEFAULT_WIDTH}px</span>
-          </div>
-          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={removeSelectedImage}>
-            <X className="h-3.5 w-3.5" />
-          </Button>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
         </div>
-      )}
+
+        {selectedImageId && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-muted/30 p-2">
+            <span className="text-xs text-muted-foreground mr-1">Imagem selecionada</span>
+            <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => moveSelectedImage("up")}>
+              <ArrowUp className="h-3.5 w-3.5" /> Subir
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => moveSelectedImage("down")}>
+              <ArrowDown className="h-3.5 w-3.5" /> Descer
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => resizeSelectedImage((selectedImageWidth || IMAGE_DEFAULT_WIDTH) - 20)}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => resizeSelectedImage((selectedImageWidth || IMAGE_DEFAULT_WIDTH) + 20)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            <div className="flex items-center gap-2 min-w-[170px]">
+              <input
+                type="range"
+                min={IMAGE_MIN_WIDTH}
+                max={IMAGE_MAX_WIDTH}
+                step={10}
+                value={selectedImageWidth || IMAGE_DEFAULT_WIDTH}
+                onChange={(e) => resizeSelectedImage(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <span className="text-xs text-muted-foreground w-12 text-right">{selectedImageWidth || IMAGE_DEFAULT_WIDTH}px</span>
+            </div>
+            <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={removeSelectedImage}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       <div className="relative">
         {isEditorEmpty && (
