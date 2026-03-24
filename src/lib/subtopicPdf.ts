@@ -110,9 +110,6 @@ export function openSubtopicPdfPrint({
   theory,
   exercises,
 }: DownloadSubtopicPdfParams) {
-  const windowRef = window.open("", "_blank", "noopener,noreferrer,width=1024,height=768");
-  if (!windowRef) return false;
-
   const theoryHtml = buildTheoryHtml(theory);
   const exercisesHtml = buildExercisesHtml(exercises);
   const generatedAt = new Date().toLocaleString("pt-BR");
@@ -235,14 +232,69 @@ export function openSubtopicPdfPrint({
   </body>
 </html>`;
 
-  windowRef.document.open();
-  windowRef.document.write(documentHtml);
-  windowRef.document.close();
+  const printWithWindow = () => {
+    const windowRef = window.open("", "_blank", "width=1024,height=768");
+    if (!windowRef) return false;
 
-  windowRef.onload = () => {
-    windowRef.focus();
-    windowRef.print();
+    try {
+      windowRef.document.open();
+      windowRef.document.write(documentHtml);
+      windowRef.document.close();
+
+      const triggerPrint = () => {
+        windowRef.focus();
+        windowRef.print();
+      };
+
+      if (windowRef.document.readyState === "complete") {
+        setTimeout(triggerPrint, 120);
+      } else {
+        windowRef.onload = () => setTimeout(triggerPrint, 120);
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  return true;
+  const printWithIframe = () => {
+    try {
+      const iframe = document.createElement("iframe");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.style.opacity = "0";
+      iframe.srcdoc = documentHtml;
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        const frameWindow = iframe.contentWindow;
+        if (!frameWindow) {
+          iframe.remove();
+          return;
+        }
+
+        const cleanup = () => {
+          setTimeout(() => iframe.remove(), 400);
+        };
+
+        frameWindow.onafterprint = cleanup;
+        frameWindow.focus();
+        frameWindow.print();
+        setTimeout(cleanup, 12000);
+      };
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  if (printWithWindow()) return true;
+  return printWithIframe();
 }
