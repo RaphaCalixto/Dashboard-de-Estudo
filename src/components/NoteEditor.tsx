@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, ArrowUp, ImagePlus, Minus, Plus, Save, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Bold, ImagePlus, Italic, List, ListOrdered, Minus, Plus, Save, Underline, X } from "lucide-react";
 import { MathSymbolPicker } from "./MathSymbolPicker";
 import { SimpleCalculator } from "./SimpleCalculator";
 import type { StudyNote } from "@/lib/studyStore";
@@ -23,9 +23,11 @@ interface NoteEditorProps {
 const IMAGE_MIN_WIDTH = 80;
 const IMAGE_MAX_WIDTH = 1000;
 const IMAGE_DEFAULT_WIDTH = 280;
+const FONT_SIZE_MARKER = "7";
 
 export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title || "");
+  const [fontSize, setFontSize] = useState("16");
   const initialHtml = useMemo(
     () => createInitialNoteHtml(note?.content || "", note?.images || []),
     [note?.content, note?.images],
@@ -213,6 +215,37 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
     syncEditorContent();
   };
 
+  const applyFormatCommand = useCallback((command: string, value?: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+    restoreSelection();
+    document.execCommand(command, false, value);
+    rememberSelection();
+    syncEditorContent();
+  }, [rememberSelection, restoreSelection, syncEditorContent]);
+
+  const applyFontSize = useCallback((nextSize: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    setFontSize(nextSize);
+    editor.focus();
+    restoreSelection();
+    document.execCommand("fontSize", false, FONT_SIZE_MARKER);
+
+    editor.querySelectorAll(`font[size="${FONT_SIZE_MARKER}"]`).forEach((fontNode) => {
+      const span = document.createElement("span");
+      span.style.fontSize = `${nextSize}px`;
+      span.innerHTML = fontNode.innerHTML;
+      fontNode.replaceWith(span);
+    });
+
+    rememberSelection();
+    syncEditorContent();
+  }, [rememberSelection, restoreSelection, syncEditorContent]);
+
   const insertImageAtCaret = useCallback((src: string) => {
     const figure = document.createElement("figure");
     figure.setAttribute("data-note-image-container", "true");
@@ -353,6 +386,36 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
       />
 
       <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-muted-foreground">FormataÃ§Ã£o</span>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("bold")}>
+          <Bold className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("italic")}>
+          <Italic className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("underline")}>
+          <Underline className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertUnorderedList")}>
+          <List className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("insertOrderedList")}>
+          <ListOrdered className="h-3.5 w-3.5" />
+        </Button>
+        <select
+          value={fontSize}
+          onChange={(e) => applyFontSize(e.target.value)}
+          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+          aria-label="Tamanho do texto"
+        >
+          <option value="12">12</option>
+          <option value="14">14</option>
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="22">22</option>
+          <option value="28">28</option>
+        </select>
+
         {showMathTools && (
           <>
             <MathSymbolPicker onInsert={insertSymbol} />
