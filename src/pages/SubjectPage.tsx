@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, BookOpen, Dumbbell, Search, FlaskConical, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Dumbbell, Search, FlaskConical, ChevronRight, Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +26,7 @@ import { ExerciseCard } from "@/components/ExerciseCard";
 import { FormulasList } from "@/components/FormulasList";
 import { addCustomSubtopic, getCustomSubtopics, type CustomSubtopic } from "@/lib/customSubtopicsStore";
 import { noteHtmlToPlainText } from "@/lib/richNoteContent";
+import { openSubtopicPdfPrint } from "@/lib/subtopicPdf";
 import { toast } from "sonner";
 
 interface SubtopicOption extends SubTopic {
@@ -167,6 +168,32 @@ export default function SubjectPage() {
     } catch {
       toast.error("Erro ao salvar exercício");
     }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!currentSubtopic || !subtopicData) {
+      toast.error("Nao ha dados disponiveis para exportar");
+      return;
+    }
+
+    if (subtopicData.theory.length === 0 && subtopicData.exercises.length === 0) {
+      toast.error("Adicione teoria ou exercicios antes de exportar");
+      return;
+    }
+
+    const opened = openSubtopicPdfPrint({
+      subjectName: subject.name,
+      subtopicName: currentSubtopic.name,
+      theory: subtopicData.theory,
+      exercises: subtopicData.exercises,
+    });
+
+    if (!opened) {
+      toast.error("Nao foi possivel abrir a janela de impressao. Verifique bloqueio de pop-up.");
+      return;
+    }
+
+    toast.success("Janela aberta. Escolha 'Salvar como PDF' para baixar.");
   };
 
   return (
@@ -338,7 +365,8 @@ export default function SubjectPage() {
         {/* Subtopic content */}
         {selectedSubtopic && !searchQuery.trim() && (
           <Tabs defaultValue="theory" className="w-full">
-            <TabsList className="mb-6 w-full sm:w-auto">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <TabsList className="w-full sm:w-auto">
               <TabsTrigger value="theory" className="gap-1.5">
                 <BookOpen className="h-4 w-4" /> Teoria
               </TabsTrigger>
@@ -350,7 +378,17 @@ export default function SubjectPage() {
                   <FlaskConical className="h-4 w-4" /> Fórmulas
                 </TabsTrigger>
               )}
-            </TabsList>
+              </TabsList>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={handleDownloadPdf}
+                disabled={loading || !subtopicData || (subtopicData.theory.length === 0 && subtopicData.exercises.length === 0)}
+              >
+                <FileDown className="h-4 w-4" /> Download PDF
+              </Button>
+            </div>
 
             <TabsContent value="theory" className="space-y-4">
               {loading ? (
