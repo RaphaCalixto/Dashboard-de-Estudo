@@ -1,6 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { StudyNote, ExerciseNote, SubTopicData, ExamResult, ExamQuestion } from "./studyStore";
 
+export interface ExamStudyMaterial {
+  id: string;
+  subtopicId: string;
+  type: "theory" | "exercise";
+  title: string;
+  content: string;
+  question: string;
+  resolution: string;
+  answer: string;
+  updatedAt: string;
+}
+
 // ---- Notes (theory) ----
 
 export async function fetchTheoryNotes(subjectId: string, subtopicId: string): Promise<StudyNote[]> {
@@ -119,6 +131,34 @@ export async function fetchSubTopicData(subjectId: string, subtopicId: string): 
     fetchExercises(subjectId, subtopicId),
   ]);
   return { theory, exercises };
+}
+
+export async function fetchExamStudyMaterials(subjectId: string, subtopicIds: string[]): Promise<ExamStudyMaterial[]> {
+  let query = supabase
+    .from("notes")
+    .select("id, subtopic_id, type, title, content, question, resolution, answer, updated_at")
+    .eq("subject_id", subjectId)
+    .order("updated_at", { ascending: false })
+    .limit(400);
+
+  if (subtopicIds.length > 0) {
+    query = query.in("subtopic_id", subtopicIds);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    subtopicId: row.subtopic_id,
+    type: row.type === "exercise" ? "exercise" : "theory",
+    title: row.title || "",
+    content: row.content || "",
+    question: row.question || "",
+    resolution: row.resolution || "",
+    answer: row.answer || "",
+    updatedAt: row.updated_at || "",
+  }));
 }
 
 // ---- Search ----

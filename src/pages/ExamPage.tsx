@@ -5,12 +5,60 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { subjects } from "@/lib/subjects";
 import { generateId, type ExamQuestion, type ExamResult } from "@/lib/studyStore";
-import { fetchExamResults, saveExamResultDb } from "@/lib/supabaseStore";
+import { fetchExamResults, fetchExamStudyMaterials, saveExamResultDb } from "@/lib/supabaseStore";
 import { getCustomSubtopics, type CustomSubtopic } from "@/lib/customSubtopicsStore";
 import { supabase } from "@/integrations/supabase/client";
+import { noteHtmlToPlainText } from "@/lib/richNoteContent";
 import { toast } from "sonner";
 
 type ExamPhase = 'setup' | 'loading' | 'running' | 'result';
+const MAX_STUDY_CONTEXT_CHARS = 14000;
+
+function normalizeStudyText(raw: string) {
+  return noteHtmlToPlainText(raw || "").replace(/\s+/g, " ").trim();
+}
+
+function buildStudyContext(
+  materials: Awaited<ReturnType<typeof fetchExamStudyMaterials>>,
+  topics: Array<{ id: string; name: string }>,
+) {
+  const topicNameById = new Map(topics.map((topic) => [topic.id, topic.name]));
+  const grouped = new Map<string, string[]>();
+
+  for (const item of materials) {
+    const lines: string[] = [];
+    if (item.title.trim()) lines.push(`Titulo: ${item.title.trim()}`);
+
+    if (item.type === "theory") {
+      const theoryText = normalizeStudyText(item.content);
+      if (theoryText) lines.push(`Teoria: ${theoryText}`);
+    } else {
+      const question = normalizeStudyText(item.question);
+      const resolution = normalizeStudyText(item.resolution);
+      const answer = normalizeStudyText(item.answer);
+      if (question) lines.push(`Exercicio: ${question}`);
+      if (resolution) lines.push(`Resolucao: ${resolution}`);
+      if (answer) lines.push(`Resposta: ${answer}`);
+    }
+
+    if (lines.length === 0) continue;
+
+    const block = lines.join(" | ");
+    const current = grouped.get(item.subtopicId) || [];
+    current.push(block);
+    grouped.set(item.subtopicId, current);
+  }
+
+  const sections: string[] = [];
+  for (const [subtopicId, entries] of grouped.entries()) {
+    const topicName = topicNameById.get(subtopicId) || subtopicId;
+    sections.push(`Subtopico: ${topicName}\n${entries.join("\n")}`);
+  }
+
+  const fullContext = sections.join("\n\n");
+  if (fullContext.length <= MAX_STUDY_CONTEXT_CHARS) return fullContext;
+  return `${fullContext.slice(0, MAX_STUDY_CONTEXT_CHARS)}\n\n[Contexto truncado por limite de tamanho]`;
+}
 
 export default function ExamPage() {
   const navigate = useNavigate();
@@ -68,15 +116,26 @@ export default function ExamPage() {
     const topicNames = selectedTopics
       .map((tid) => availableTopics.find((st) => st.id === tid)?.name)
       .filter(Boolean);
+    const selectedTopicIds = selectedTopics.length > 0
+      ? selectedTopics
+      : availableTopics.map((topic) => topic.id);
 
     setPhase('loading');
 
     try {
+      const materials = await fetchExamStudyMaterials(selectedSubject, selectedTopicIds);
+      const studyContext = buildStudyContext(materials, availableTopics);
+
+      if (!studyContext.trim()) {
+        throw new Error("Nao encontrei conteudo salvo nos subtopicos escolhidos. Adicione teoria/exercicios e tente novamente.");
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-exam', {
         body: {
           subject: subjectName,
           subtopics: topicNames,
           numQuestions,
+          studyContext,
         },
       });
 

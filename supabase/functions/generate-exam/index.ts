@@ -17,22 +17,25 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    const { subject, subtopics, numQuestions } = await req.json();
+    const { subject, subtopics, numQuestions, studyContext } = await req.json();
 
-    if (!subject || !numQuestions) {
+    if (!subject || !numQuestions || !studyContext) {
       return new Response(
-        JSON.stringify({ error: "subject and numQuestions are required" }),
+        JSON.stringify({ error: "subject, numQuestions and studyContext are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const topicsText = subtopics?.length
-      ? `Foque nos seguintes subtópicos: ${subtopics.join(", ")}.`
+      ? `Foque nos seguintes subtopicos: ${subtopics.join(", ")}.`
       : "";
 
-    const systemPrompt = `Você é um gerador de questões para provas e concursos brasileiros. Gere questões de múltipla escolha de alta qualidade, variadas e desafiadoras. Sempre em português do Brasil. Cada questão deve ter exatamente 4 alternativas (A, B, C, D) e apenas uma correta. Retorne APENAS um JSON válido, sem markdown, sem explicação.`;
+    const systemPrompt = `Voce e um gerador de questoes para provas e concursos brasileiros. Gere questoes de multipla escolha de alta qualidade, variadas e desafiadoras. Sempre em portugues do Brasil. Cada questao deve ter exatamente 4 alternativas (A, B, C, D) e apenas uma correta. Use SOMENTE o conteudo de estudo enviado pelo usuario como base factual. Nao invente temas fora do conteudo-base. Retorne APENAS um JSON valido, sem markdown, sem explicacao.`;
 
-    const userPrompt = `Gere ${numQuestions} questões de múltipla escolha sobre ${subject}. ${topicsText}
+    const userPrompt = `Gere ${numQuestions} questoes de multipla escolha sobre ${subject}. ${topicsText}
+
+Base de estudo obrigatoria:
+${studyContext}
 
 Retorne um JSON com esta estrutura exata:
 {
@@ -45,7 +48,7 @@ Retorne um JSON com esta estrutura exata:
   ]
 }
 
-Onde correctIndex é o índice (0-3) da alternativa correta. Varie a posição da resposta correta. Faça questões no nível de provas como ENEM, concursos públicos e vestibulares.`;
+Onde correctIndex e o indice (0-3) da alternativa correta. Varie a posicao da resposta correta. Faca questoes no nivel de provas como ENEM, concursos publicos e vestibulares. Nao use fatos externos que nao estejam na base de estudo acima.`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -68,13 +71,13 @@ Onde correctIndex é o índice (0-3) da alternativa correta. Varie a posição d
       console.error("AI Gateway error:", response.status, errorText);
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }),
+          JSON.stringify({ error: "Limite de requisicoes excedido. Tente novamente em alguns segundos." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace." }),
+          JSON.stringify({ error: "Creditos insuficientes. Adicione creditos ao workspace." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -91,7 +94,6 @@ Onde correctIndex é o índice (0-3) da alternativa correta. Varie a posição d
       throw new Error("No content in OpenAI response");
     }
 
-    // Parse the JSON from the response (handle potential markdown wrapping)
     let parsed;
     try {
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
