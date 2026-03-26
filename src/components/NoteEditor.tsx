@@ -387,7 +387,7 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
 
       <div className="sticky top-2 z-20 -mx-1 space-y-2 rounded-lg border border-border/70 bg-card/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">FormataÃ§Ã£o</span>
+          <span className="text-xs font-medium text-muted-foreground">{"Formata\u00e7\u00e3o"}</span>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => applyFormatCommand("bold")}>
             <Bold className="h-3.5 w-3.5" />
           </Button>
@@ -513,3 +513,4 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
     </div>
   );
 }
+
