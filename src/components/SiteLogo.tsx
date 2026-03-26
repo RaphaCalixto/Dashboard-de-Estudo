@@ -7,7 +7,7 @@ interface SiteLogoProps {
 export function SiteLogo({ className }: SiteLogoProps) {
   return (
     <img
-      src="/site-icon.svg"
+      src="/study-icon.svg"
       alt="Logo do Meu Caderno de Estudos"
       className={cn("h-16 w-16 object-contain", className)}
       loading="eager"
@@ -15,4 +15,3 @@ export function SiteLogo({ className }: SiteLogoProps) {
     />
   );
 }
-

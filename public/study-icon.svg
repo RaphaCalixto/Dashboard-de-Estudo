@@ -1,5 +1,5 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">Ícone do Meu Caderno de Estudos</title>
+  <title id="title">Icone do Meu Caderno de Estudos</title>
   <desc id="desc">Livro com diploma e capelo de formatura em um selo circular.</desc>
   <circle cx="256" cy="256" r="256" fill="#F4C54F"/>
 
@@ -23,4 +23,3 @@
   <circle cx="80" cy="258" r="8" fill="#F5F5F5"/>
   <path d="M80 266l-8 40h16z" fill="#FF5A5F"/>
 </svg>
-
