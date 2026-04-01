@@ -4,9 +4,21 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, missingSupabaseEnv, supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SiteLogo } from "@/components/SiteLogo";
+
+function getAuthErrorMessage(error: unknown) {
+  const defaultMessage = "Erro na autenticacao.";
+  const rawMessage = error instanceof Error ? error.message : String(error ?? "");
+  const normalizedMessage = rawMessage.toLowerCase();
+
+  if (normalizedMessage.includes("failed to fetch") || normalizedMessage.includes("networkerror")) {
+    return "Falha de conexao com o servidor de autenticacao. Confira URL/chave do Supabase e tente novamente.";
+  }
+
+  return rawMessage || defaultMessage;
+}
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -18,6 +30,12 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isSupabaseConfigured) {
+      toast.error(`Configure ${missingSupabaseEnv.join(", ")} na Vercel para habilitar login.`);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -38,8 +56,8 @@ export default function AuthPage() {
         if (error) throw error;
         toast.success("Conta criada! Verifique seu email para confirmar.");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Erro na autentica\u00e7\u00e3o");
+    } catch (error) {
+      toast.error(getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -57,15 +75,17 @@ export default function AuthPage() {
         <div className="w-full max-w-sm space-y-8 rounded-2xl border border-white/20 bg-background/85 p-6 shadow-2xl backdrop-blur-md sm:p-8">
           <div className="text-center">
             <SiteLogo className="mx-auto mb-4 h-20 w-20" />
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              Meu Caderno de Estudos
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isLogin ? "Entre na sua conta" : "Crie sua conta"}
-            </p>
+            <h1 className="font-display text-2xl font-bold text-foreground">Meu Caderno de Estudos</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{isLogin ? "Entre na sua conta" : "Crie sua conta"}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isSupabaseConfigured && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                Configuracao incompleta no deploy. Corrija: {missingSupabaseEnv.join(", ")}.
+              </div>
+            )}
+
             {!isLogin && (
               <div>
                 <Label htmlFor="name">Nome</Label>
@@ -78,6 +98,7 @@ export default function AuthPage() {
                 />
               </div>
             )}
+
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -89,6 +110,7 @@ export default function AuthPage() {
                 required
               />
             </div>
+
             <div>
               <Label htmlFor="password">Senha</Label>
               <Input
@@ -96,23 +118,21 @@ export default function AuthPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="M\u00ednimo 6 caracteres"
+                placeholder="Minimo 6 caracteres"
                 minLength={6}
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isLogin ? "Entrar" : "Criar Conta"}
+
+            <Button type="submit" className="w-full" disabled={loading || !isSupabaseConfigured}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLogin ? "Entrar" : "Criar conta"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? "N\u00e3o tem conta?" : "J\u00e1 tem conta?"}{" "}
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary font-medium hover:underline"
-            >
+            {isLogin ? "Nao tem conta?" : "Ja tem conta?"}{" "}
+            <button onClick={() => setIsLogin(!isLogin)} className="font-medium text-primary hover:underline">
               {isLogin ? "Criar conta" : "Fazer login"}
             </button>
           </p>
