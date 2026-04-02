@@ -1,4 +1,4 @@
-import { Target, LogOut } from "lucide-react";
+import { Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { subjects } from "@/lib/subjects";
 import { SubjectCard } from "@/components/SubjectCard";
@@ -8,20 +8,12 @@ import { SiteLogo } from "@/components/SiteLogo";
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card px-4 py-12 sm:px-8">
         <div className="mx-auto max-w-5xl text-center relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 gap-1.5 text-muted-foreground"
-            onClick={signOut}
-          >
-            <LogOut className="h-4 w-4" /> Sair
-          </Button>
           <SiteLogo className="mx-auto mb-4 h-20 w-20" />
           <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">
             Meu Caderno de Estudos

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AppSidebarLayout } from "@/components/AppSidebarLayout";
 import Index from "./pages/Index.tsx";
 import SubjectPage from "./pages/SubjectPage.tsx";
 import ExamPage from "./pages/ExamPage.tsx";
@@ -23,7 +23,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     </div>
   );
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return <AppSidebarLayout>{children}</AppSidebarLayout>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -41,9 +41,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <div className="fixed bottom-4 right-4 z-50">
-              <ThemeToggle />
-            </div>
             <Routes>
               <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
