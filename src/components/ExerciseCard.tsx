@@ -54,9 +54,12 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
           </div>
 
           {questionIsHtml ? (
-            <div className="note-rich-content text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeQuestionHtml }} />
+            <div
+              className="note-rich-content rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              dangerouslySetInnerHTML={{ __html: safeQuestionHtml }}
+            />
           ) : (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{exercise.question}</p>
+            <p className="whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">{exercise.question}</p>
           )}
         </div>
 
@@ -127,9 +130,12 @@ export function ExerciseCard({ exercise, showMathTools, onUpdate, onDelete }: Ex
         <div className="mt-3 rounded-lg bg-muted p-3">
           <p className="text-xs font-medium text-muted-foreground mb-1">Resolução:</p>
           {resolutionIsHtml ? (
-            <div className="note-rich-content text-sm text-foreground" dangerouslySetInnerHTML={{ __html: safeResolutionHtml }} />
+            <div
+              className="note-rich-content rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              dangerouslySetInnerHTML={{ __html: safeResolutionHtml }}
+            />
           ) : (
-            <p className="whitespace-pre-wrap text-sm text-foreground">{exercise.resolution}</p>
+            <p className="whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">{exercise.resolution}</p>
           )}
         </div>
       )}

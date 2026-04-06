@@ -45,9 +45,12 @@ export function NoteCard({ note, showMathTools, onUpdate, onDelete }: NoteCardPr
           )}
 
           {contentIsHtml ? (
-            <div className="note-rich-content text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+            <div
+              className="note-rich-content rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
+            />
           ) : (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{note.content}</p>
+            <p className="whitespace-pre-wrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">{note.content}</p>
           )}
         </div>
 

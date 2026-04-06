@@ -28,6 +28,7 @@ const FONT_SIZE_MARKER = "7";
 export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: NoteEditorProps) {
   const [title, setTitle] = useState(note?.title || "");
   const [fontSize, setFontSize] = useState("16");
+  const [fontSizePickerValue, setFontSizePickerValue] = useState("");
   const initialHtml = useMemo(
     () => createInitialNoteHtml(note?.content || "", note?.images || []),
     [note?.content, note?.images],
@@ -246,6 +247,12 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
     syncEditorContent();
   }, [rememberSelection, restoreSelection, syncEditorContent]);
 
+  const handleFontSizeChange = useCallback((nextSize: string) => {
+    if (!nextSize) return;
+    applyFontSize(nextSize);
+    setFontSizePickerValue("");
+  }, [applyFontSize]);
+
   const insertImageAtCaret = useCallback((src: string) => {
     const figure = document.createElement("figure");
     figure.setAttribute("data-note-image-container", "true");
@@ -404,11 +411,12 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
             <ListOrdered className="h-3.5 w-3.5" />
           </Button>
           <select
-            value={fontSize}
-            onChange={(e) => applyFontSize(e.target.value)}
+            value={fontSizePickerValue}
+            onChange={(e) => handleFontSizeChange(e.target.value)}
             className="h-8 rounded-md border border-input bg-background px-2 text-xs"
             aria-label="Tamanho do texto"
           >
+            <option value="">{`Tam. (${fontSize})`}</option>
             <option value="12">12</option>
             <option value="14">14</option>
             <option value="16">16</option>
@@ -476,7 +484,7 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
 
       <div className="relative">
         {isEditorEmpty && (
-          <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-muted-foreground">
+          <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-slate-400">
             Escreva suas anotações aqui...
           </span>
         )}
@@ -489,7 +497,7 @@ export function NoteEditor({ note, showMathTools, onSave, onCancel, onDelete }: 
           onKeyUp={rememberSelection}
           onBlur={rememberSelection}
           onClick={handleEditorClick}
-          className="note-editor min-h-[170px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="note-editor min-h-[170px] rounded-md border border-input bg-white px-3 py-2 text-sm text-slate-900 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         />
       </div>
 

@@ -154,7 +154,7 @@ export function ExerciseEditor({ exercise, showMathTools, onSave, onCancel, onDe
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Enunciado / Questão</label>
         <div className="relative">
           {questionField.isEmpty && (
-            <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-muted-foreground">
+            <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-slate-400">
               Escreva o enunciado do exercício...
             </span>
           )}
@@ -171,7 +171,7 @@ export function ExerciseEditor({ exercise, showMathTools, onSave, onCancel, onDe
               focusQuestion();
               questionField.handleEditorClick(e);
             }}
-            className="note-editor min-h-[110px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="note-editor min-h-[110px] rounded-md border border-input bg-white px-3 py-2 text-sm text-slate-900 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           />
         </div>
       </div>
@@ -180,7 +180,7 @@ export function ExerciseEditor({ exercise, showMathTools, onSave, onCancel, onDe
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Resolução passo a passo</label>
         <div className="relative">
           {resolutionField.isEmpty && (
-            <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-muted-foreground">
+            <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-slate-400">
               Descreva os passos da resolução...
             </span>
           )}
@@ -197,7 +197,7 @@ export function ExerciseEditor({ exercise, showMathTools, onSave, onCancel, onDe
               focusResolution();
               resolutionField.handleEditorClick(e);
             }}
-            className="note-editor min-h-[90px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="note-editor min-h-[90px] rounded-md border border-input bg-white px-3 py-2 text-sm text-slate-900 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           />
         </div>
       </div>
