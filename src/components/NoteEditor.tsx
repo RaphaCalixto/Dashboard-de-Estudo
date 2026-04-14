@@ -176,6 +176,15 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     svg.style.transform = `rotate(${rotate}deg) scale(${sx}, ${sy})`;
   }, []);
 
+  const applyImageTransformStyles = useCallback((img: HTMLImageElement) => {
+    const flipX = img.dataset.noteFlipX === "true";
+    const flipY = img.dataset.noteFlipY === "true";
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    img.style.transformOrigin = "50% 50%";
+    img.style.transform = `scale(${sx}, ${sy})`;
+  }, []);
+
   const normalizeEditorImages = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -360,15 +369,6 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     if (!img) return null;
     return (img.closest("figure[data-note-image-container]") as HTMLElement | null) || null;
   }, [getSelectedImage]);
-
-  const applyImageTransformStyles = useCallback((img: HTMLImageElement) => {
-    const flipX = img.dataset.noteFlipX === "true";
-    const flipY = img.dataset.noteFlipY === "true";
-    const sx = flipX ? -1 : 1;
-    const sy = flipY ? -1 : 1;
-    img.style.transformOrigin = "50% 50%";
-    img.style.transform = `scale(${sx}, ${sy})`;
-  }, []);
 
   const setImageFlip = useCallback((next: Partial<{ flipX: boolean; flipY: boolean }>) => {
     const img = getSelectedImage();
