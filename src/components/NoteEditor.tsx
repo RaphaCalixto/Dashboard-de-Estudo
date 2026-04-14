@@ -1,7 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, ArrowUp, Bold, ImagePlus, Italic, List, ListOrdered, Minus, Plus, Save, Underline, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Bold,
+  FlipHorizontal,
+  FlipVertical,
+  ImagePlus,
+  Italic,
+  List,
+  ListOrdered,
+  Minus,
+  Plus,
+  RotateCcw,
+  RotateCw,
+  Save,
+  Underline,
+  X,
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { MathSymbolPicker } from "./MathSymbolPicker";
@@ -77,6 +94,10 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [selectedImageWidth, setSelectedImageWidth] = useState<number | null>(null);
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [shapeRotation, setShapeRotation] = useState(0);
+  const [shapeScale, setShapeScale] = useState(1);
+  const [shapeFlipX, setShapeFlipX] = useState(false);
+  const [shapeFlipY, setShapeFlipY] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectionRef = useRef<Range | null>(null);
@@ -102,6 +123,28 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   const createShapeId = useCallback(() => {
     shapeCounterRef.current += 1;
     return `note-shape-${Date.now()}-${shapeCounterRef.current}`;
+  }, []);
+
+  const getSelectedShapeContainer = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor || !selectedShapeId) return null;
+    return editor.querySelector(`figure[data-note-shape-container][data-note-shape-id="${selectedShapeId}"]`) as HTMLElement | null;
+  }, [selectedShapeId]);
+
+  const applyShapeTransformStyles = useCallback((container: HTMLElement) => {
+    const rotate = Number.parseFloat(container.dataset.noteShapeRotate || "0") || 0;
+    const scale = Number.parseFloat(container.dataset.noteShapeScale || "1") || 1;
+    const flipX = container.dataset.noteShapeFlipX === "true";
+    const flipY = container.dataset.noteShapeFlipY === "true";
+
+    const svg = container.querySelector("svg") as SVGSVGElement | null;
+    if (!svg) return;
+
+    svg.style.transformOrigin = "50% 50%";
+    svg.style.overflow = "visible";
+    const sx = (flipX ? -1 : 1) * scale;
+    const sy = (flipY ? -1 : 1) * scale;
+    svg.style.transform = `rotate(${rotate}deg) scale(${sx}, ${sy})`;
   }, []);
 
   const normalizeEditorImages = useCallback(() => {
@@ -136,9 +179,27 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     });
 
     editor.querySelectorAll("figure[data-note-shape-container]").forEach((figure) => {
-      (figure as HTMLElement).contentEditable = "false";
+      const container = figure as HTMLElement;
+      container.contentEditable = "false";
+
+      if (!container.dataset.noteShapeId) {
+        const existing = container.getAttribute("data-note-shape-id");
+        container.dataset.noteShapeId = existing || createShapeId();
+      }
+      container.setAttribute("data-note-shape-id", container.dataset.noteShapeId);
+
+      if (!container.dataset.noteShapeRotate) container.dataset.noteShapeRotate = "0";
+      if (!container.dataset.noteShapeScale) container.dataset.noteShapeScale = "1";
+      if (!container.dataset.noteShapeFlipX) container.dataset.noteShapeFlipX = "false";
+      if (!container.dataset.noteShapeFlipY) container.dataset.noteShapeFlipY = "false";
+
+      const svg = container.querySelector("svg") as SVGSVGElement | null;
+      if (svg && !svg.getAttribute("data-note-shape-id")) {
+        svg.setAttribute("data-note-shape-id", container.dataset.noteShapeId);
+      }
+      applyShapeTransformStyles(container);
     });
-  }, [clampImageWidth, createImageId, getImageWidth]);
+  }, [applyShapeTransformStyles, clampImageWidth, createImageId, createShapeId, getImageWidth]);
 
   const syncEditorContent = useCallback(() => {
     const editor = editorRef.current;
@@ -146,6 +207,28 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     normalizeEditorImages();
     setContentHtml(sanitizeNoteHtml(editor.innerHTML));
   }, [normalizeEditorImages]);
+
+  const setShapeTransform = useCallback((next: Partial<{ rotate: number; scale: number; flipX: boolean; flipY: boolean }>) => {
+    const container = getSelectedShapeContainer();
+    if (!container) return;
+
+    const currentRotate = Number.parseFloat(container.dataset.noteShapeRotate || "0") || 0;
+    const currentScale = Number.parseFloat(container.dataset.noteShapeScale || "1") || 1;
+    const currentFlipX = container.dataset.noteShapeFlipX === "true";
+    const currentFlipY = container.dataset.noteShapeFlipY === "true";
+
+    const rotate = typeof next.rotate === "number" ? next.rotate : currentRotate;
+    const scale = typeof next.scale === "number" ? next.scale : currentScale;
+    const flipX = typeof next.flipX === "boolean" ? next.flipX : currentFlipX;
+    const flipY = typeof next.flipY === "boolean" ? next.flipY : currentFlipY;
+
+    container.dataset.noteShapeRotate = String(rotate);
+    container.dataset.noteShapeScale = String(scale);
+    container.dataset.noteShapeFlipX = String(flipX);
+    container.dataset.noteShapeFlipY = String(flipY);
+    applyShapeTransformStyles(container);
+    syncEditorContent();
+  }, [applyShapeTransformStyles, getSelectedShapeContainer, syncEditorContent]);
 
   const moveCursorToEnd = useCallback(() => {
     const editor = editorRef.current;
@@ -423,6 +506,11 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     figure.setAttribute("data-note-shape-container", "true");
     figure.setAttribute("contenteditable", "false");
     figure.dataset.noteShapeId = shapeId;
+    figure.setAttribute("data-note-shape-id", shapeId);
+    figure.dataset.noteShapeRotate = "0";
+    figure.dataset.noteShapeScale = "1";
+    figure.dataset.noteShapeFlipX = "false";
+    figure.dataset.noteShapeFlipY = "false";
 
     const svg = createShapeSvg(shape, activeColor);
     svg.setAttribute("data-note-shape-id", shapeId);
@@ -438,6 +526,10 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     setSelectedImageId(null);
     setSelectedImageWidth(null);
     setSelectedShapeId(shapeId);
+    setShapeRotation(0);
+    setShapeScale(1);
+    setShapeFlipX(false);
+    setShapeFlipY(false);
     syncEditorContent();
   }, [activeColor, createShapeId, createShapeSvg, insertNodeAtCaret, setCursorAfterNode, syncEditorContent]);
 
@@ -617,6 +709,23 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   }, [selectedShapeId, updateSelectedShapeVisual]);
 
   useEffect(() => {
+    if (!selectedShapeId) return;
+    const container = getSelectedShapeContainer();
+    if (!container) return;
+
+    const rotate = Number.parseFloat(container.dataset.noteShapeRotate || "0") || 0;
+    const scale = Number.parseFloat(container.dataset.noteShapeScale || "1") || 1;
+    const flipX = container.dataset.noteShapeFlipX === "true";
+    const flipY = container.dataset.noteShapeFlipY === "true";
+
+    setShapeRotation(rotate);
+    setShapeScale(scale);
+    setShapeFlipX(flipX);
+    setShapeFlipY(flipY);
+    applyShapeTransformStyles(container);
+  }, [applyShapeTransformStyles, getSelectedShapeContainer, selectedShapeId]);
+
+  useEffect(() => {
     safeLocalStorageSet(NOTE_GRID_STORAGE_KEY, String(gridEnabled));
   }, [gridEnabled]);
 
@@ -711,14 +820,14 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
             <option value="star">Estrela</option>
           </select>
 
-          <div className="flex items-center gap-2 rounded-md border border-input bg-background px-2 py-1">
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1">
             <Switch
               id="note-grid"
               checked={gridEnabled}
               onCheckedChange={setGridEnabled}
               aria-label="Ativar grid"
             />
-            <Label htmlFor="note-grid" className="text-xs text-muted-foreground cursor-pointer">Grid</Label>
+            <Label htmlFor="note-grid" className="text-xs font-medium text-foreground/80 cursor-pointer">Grid</Label>
           </div>
 
           {showMathTools && (
@@ -778,17 +887,139 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
         )}
 
         {selectedShapeId && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-muted/30 p-2">
-            <span className="text-xs text-muted-foreground mr-1">Forma selecionada</span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={removeSelectedShape}
-              aria-label="Remover forma"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+          <div className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/30 p-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground mr-1">Forma selecionada</span>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = (shapeRotation - 15 + 360) % 360;
+                  setShapeRotation(next);
+                  setShapeTransform({ rotate: next });
+                }}
+                aria-label="Girar -15°"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = (shapeRotation + 15) % 360;
+                  setShapeRotation(next);
+                  setShapeTransform({ rotate: next });
+                }}
+                aria-label="Girar +15°"
+              >
+                <RotateCw className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = !shapeFlipX;
+                  setShapeFlipX(next);
+                  setShapeTransform({ flipX: next });
+                }}
+                aria-label="Espelhar horizontal"
+              >
+                <FlipHorizontal className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = !shapeFlipY;
+                  setShapeFlipY(next);
+                  setShapeTransform({ flipY: next });
+                }}
+                aria-label="Espelhar vertical"
+              >
+                <FlipVertical className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = Math.max(0.5, Math.round((shapeScale - 0.1) * 100) / 100);
+                  setShapeScale(next);
+                  setShapeTransform({ scale: next });
+                }}
+                aria-label="Diminuir tamanho"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  const next = Math.min(3, Math.round((shapeScale + 0.1) * 100) / 100);
+                  setShapeScale(next);
+                  setShapeTransform({ scale: next });
+                }}
+                aria-label="Aumentar tamanho"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive ml-auto"
+                onClick={removeSelectedShape}
+                aria-label="Remover forma"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 min-w-[240px] flex-1">
+                <span className="text-xs text-muted-foreground w-14">Giro</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={shapeRotation}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    setShapeRotation(next);
+                    setShapeTransform({ rotate: next });
+                  }}
+                  className="w-full accent-primary"
+                />
+                <span className="text-xs text-muted-foreground w-12 text-right">{Math.round(shapeRotation)}°</span>
+              </div>
+
+              <div className="flex items-center gap-2 min-w-[240px] flex-1">
+                <span className="text-xs text-muted-foreground w-14">Tamanho</span>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3}
+                  step={0.05}
+                  value={shapeScale}
+                  onChange={(e) => {
+                    const next = Math.round(Number(e.target.value) * 100) / 100;
+                    setShapeScale(next);
+                    setShapeTransform({ scale: next });
+                  }}
+                  className="w-full accent-primary"
+                />
+                <span className="text-xs text-muted-foreground w-12 text-right">{Math.round(shapeScale * 100)}%</span>
+              </div>
+            </div>
           </div>
         )}
       </div>

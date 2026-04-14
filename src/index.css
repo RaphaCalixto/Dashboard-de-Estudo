@@ -136,12 +136,17 @@
   }
 
   .note-editor.note-grid {
-    --note-grid-color: rgba(15, 23, 42, 0.08);
+    /* Grid estilo "bloco de notas": preto em qualquer tema */
+    --note-grid-color: rgba(0, 0, 0, 0.22);
+    --note-grid-color-major: rgba(0, 0, 0, 0.36);
     background-image:
       linear-gradient(to right, var(--note-grid-color) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--note-grid-color) 1px, transparent 1px);
-    background-size: 28px 28px;
+      linear-gradient(to bottom, var(--note-grid-color) 1px, transparent 1px),
+      linear-gradient(to right, var(--note-grid-color-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--note-grid-color-major) 1px, transparent 1px);
+    background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
     background-position: 0 0;
+    background-attachment: local;
   }
 
   .note-editor ul,
