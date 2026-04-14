@@ -77,6 +77,10 @@ export function sanitizeNoteHtml(rawHtml: string) {
     figure.setAttribute("contenteditable", "false");
   });
 
+  doc.body.querySelectorAll("figure[data-note-shape-container]").forEach((figure) => {
+    figure.setAttribute("contenteditable", "false");
+  });
+
   return doc.body.innerHTML.trim();
 }
 

@@ -47,7 +47,7 @@ export function AppSidebarLayout({ children }: AppSidebarLayoutProps) {
   };
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <Sidebar collapsible="offcanvas" className="border-r border-border">
         <SidebarHeader className="p-3">
           <div className="flex items-center gap-2 px-2">

@@ -197,9 +197,9 @@ export default function SubjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <header className={`${subject.colorClass} px-4 py-6 sm:px-8`}>
-        <div className="mx-auto max-w-5xl">
+        <div className="w-full">
           <Button
             variant="ghost"
             size="sm"
@@ -247,7 +247,7 @@ export default function SubjectPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-8">
+      <main className="w-full flex-1 px-4 py-6 sm:px-8">
         {/* Search results */}
         {searchQuery.trim() && (
           <div className="mb-6">
@@ -398,6 +398,7 @@ export default function SubjectPage() {
                   {addingTheory ? (
                     <NoteEditor
                       showMathTools={showMathTools}
+                      expanded
                       onSave={handleAddTheory}
                       onCancel={() => setAddingTheory(false)}
                     />

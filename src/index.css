@@ -111,6 +111,19 @@
     max-width: 100%;
   }
 
+  .note-editor figure[data-note-shape-container],
+  .note-rich-content figure[data-note-shape-container] {
+    margin: 0.5rem 0;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .note-editor figure[data-note-shape-selected="true"] {
+    outline: 2px solid hsl(var(--primary) / 0.75);
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+  }
+
   .note-editor img[data-note-inline-image],
   .note-rich-content img[data-note-inline-image] {
     max-width: 100%;
@@ -120,6 +133,15 @@
 
   .note-editor img[data-note-selected="true"] {
     box-shadow: 0 0 0 2px hsl(var(--primary) / 0.75);
+  }
+
+  .note-editor.note-grid {
+    --note-grid-color: rgba(15, 23, 42, 0.08);
+    background-image:
+      linear-gradient(to right, var(--note-grid-color) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--note-grid-color) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: 0 0;
   }
 
   .note-editor ul,
