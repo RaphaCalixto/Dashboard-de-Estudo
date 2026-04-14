@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowUp,
   Bold,
+  Highlighter,
   FlipHorizontal,
   FlipVertical,
   ImagePlus,
@@ -98,11 +99,38 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   const [shapeScale, setShapeScale] = useState(1);
   const [shapeFlipX, setShapeFlipX] = useState(false);
   const [shapeFlipY, setShapeFlipY] = useState(false);
+  const [imageFlipX, setImageFlipX] = useState(false);
+  const [imageFlipY, setImageFlipY] = useState(false);
+  const [markerColor, setMarkerColor] = useState("#fde047");
+  const [markerThickness, setMarkerThickness] = useState(8);
+  const [underlineDecorColor, setUnderlineDecorColor] = useState("#111827");
+  const [underlineDecorThickness, setUnderlineDecorThickness] = useState(2);
+  const [fontWeight, setFontWeight] = useState("400");
   const editorRef = useRef<HTMLDivElement>(null);
+  const editorSurfaceRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectionRef = useRef<Range | null>(null);
   const imageCounterRef = useRef(0);
   const shapeCounterRef = useRef(0);
+  const pointerDragRef = useRef<{
+    pointerId: number;
+    container: HTMLElement;
+    startX: number;
+    startY: number;
+    started: boolean;
+  } | null>(null);
+  const pointerResizeRef = useRef<{
+    pointerId: number;
+    kind: "image" | "shape";
+    handle: "nw" | "ne" | "sw" | "se";
+    startX: number;
+    startY: number;
+    startWidth?: number;
+    startScale?: number;
+  } | null>(null);
+  const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number; kind: "image" | "shape" } | null>(
+    null,
+  );
 
   const getImageWidth = useCallback((img: HTMLImageElement) => {
     const parsed = Number.parseInt(img.style.width || "", 10);
@@ -158,12 +186,16 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
         img.dataset.noteImageId = createImageId();
       }
 
+      if (!img.dataset.noteFlipX) img.dataset.noteFlipX = "false";
+      if (!img.dataset.noteFlipY) img.dataset.noteFlipY = "false";
+
       img.dataset.noteInlineImage = "true";
       img.style.width = `${clampImageWidth(getImageWidth(img))}px`;
       img.style.maxWidth = "100%";
       img.style.height = "auto";
       img.style.display = "block";
       img.style.borderRadius = "0.5rem";
+      applyImageTransformStyles(img);
 
       if (img.parentElement?.tagName !== "FIGURE") {
         const figure = document.createElement("figure");
@@ -199,7 +231,7 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
       }
       applyShapeTransformStyles(container);
     });
-  }, [applyShapeTransformStyles, clampImageWidth, createImageId, createShapeId, getImageWidth]);
+  }, [applyImageTransformStyles, applyShapeTransformStyles, clampImageWidth, createImageId, createShapeId, getImageWidth]);
 
   const syncEditorContent = useCallback(() => {
     const editor = editorRef.current;
@@ -305,6 +337,34 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     return editor.querySelector(`img[data-note-image-id="${selectedImageId}"]`) as HTMLImageElement | null;
   }, [selectedImageId]);
 
+  const getSelectedImageContainer = useCallback(() => {
+    const img = getSelectedImage();
+    if (!img) return null;
+    return (img.closest("figure[data-note-image-container]") as HTMLElement | null) || null;
+  }, [getSelectedImage]);
+
+  const applyImageTransformStyles = useCallback((img: HTMLImageElement) => {
+    const flipX = img.dataset.noteFlipX === "true";
+    const flipY = img.dataset.noteFlipY === "true";
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    img.style.transformOrigin = "50% 50%";
+    img.style.transform = `scale(${sx}, ${sy})`;
+  }, []);
+
+  const setImageFlip = useCallback((next: Partial<{ flipX: boolean; flipY: boolean }>) => {
+    const img = getSelectedImage();
+    if (!img) return;
+    const currentFlipX = img.dataset.noteFlipX === "true";
+    const currentFlipY = img.dataset.noteFlipY === "true";
+    const flipX = typeof next.flipX === "boolean" ? next.flipX : currentFlipX;
+    const flipY = typeof next.flipY === "boolean" ? next.flipY : currentFlipY;
+    img.dataset.noteFlipX = String(flipX);
+    img.dataset.noteFlipY = String(flipY);
+    applyImageTransformStyles(img);
+    syncEditorContent();
+  }, [applyImageTransformStyles, getSelectedImage, syncEditorContent]);
+
   const setCursorAfterNode = useCallback((node: Node) => {
     const selection = window.getSelection();
     if (!selection) return;
@@ -344,6 +404,26 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     setCursorAfterNode(node);
   }, [moveCursorToEnd, restoreSelection, setCursorAfterNode]);
 
+  const wrapSelectionWithSpanStyle = useCallback((style: Record<string, string>) => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) return;
+    if (!editor.contains(range.commonAncestorContainer)) return;
+
+    const span = document.createElement("span");
+    Object.entries(style).forEach(([key, value]) => {
+      span.style.setProperty(key, value);
+    });
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+    setCursorAfterNode(span);
+    rememberSelection();
+    syncEditorContent();
+  }, [rememberSelection, setCursorAfterNode, syncEditorContent]);
+
   const insertSymbol = (symbol: string) => {
     insertNodeAtCaret(document.createTextNode(symbol));
     syncEditorContent();
@@ -368,6 +448,10 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     safeLocalStorageSet(NOTE_COLOR_STORAGE_KEY, color);
     applyFormatCommand("foreColor", color);
   }, [applyFormatCommand]);
+
+  useEffect(() => {
+    setUnderlineDecorColor(activeColor);
+  }, [activeColor]);
 
   const applyFontSize = useCallback((nextSize: string) => {
     const editor = editorRef.current;
@@ -394,6 +478,195 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     applyFontSize(nextSize);
     setFontSizePickerValue("");
   }, [applyFontSize]);
+
+  const handleEditorPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const target = e.target as HTMLElement;
+    const container = target.closest("figure[data-note-image-container], figure[data-note-shape-container]") as HTMLElement | null;
+    if (!container || !editor.contains(container)) return;
+
+    if (window.getSelection()?.type === "Range") return;
+
+    pointerDragRef.current = {
+      pointerId: e.pointerId,
+      container,
+      startX: e.clientX,
+      startY: e.clientY,
+      started: false,
+    };
+    editor.setPointerCapture(e.pointerId);
+  };
+
+  const handleEditorPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    const drag = pointerDragRef.current;
+    if (!editor || !drag || drag.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.started && Math.hypot(dx, dy) < 5) return;
+
+    drag.started = true;
+    e.preventDefault();
+
+    const hover = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    if (!hover) return;
+
+    const candidate = hover.closest("p, figure[data-note-image-container], figure[data-note-shape-container]") as HTMLElement | null;
+    if (!candidate || !editor.contains(candidate)) return;
+    if (candidate === drag.container) return;
+    if (candidate.parentElement !== editor) return;
+
+    const rect = candidate.getBoundingClientRect();
+    const insertBefore = e.clientY < rect.top + rect.height / 2;
+    const beforeNode = insertBefore ? candidate : candidate.nextSibling;
+    if (beforeNode === drag.container) return;
+
+    editor.insertBefore(drag.container, beforeNode);
+    syncEditorContent();
+  };
+
+  const handleEditorPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    const drag = pointerDragRef.current;
+    if (editor && drag && drag.pointerId === e.pointerId) {
+      pointerDragRef.current = null;
+      try {
+        editor.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const updateOverlayRect = useCallback(() => {
+    const surface = editorSurfaceRef.current;
+    const editor = editorRef.current;
+    if (!surface || !editor) {
+      setOverlayRect(null);
+      return;
+    }
+
+    const surfaceRect = surface.getBoundingClientRect();
+    const shapeContainer = selectedShapeId ? getSelectedShapeContainer() : null;
+    const imageContainer = selectedImageId ? getSelectedImageContainer() : null;
+    const container = shapeContainer || imageContainer;
+    if (!container) {
+      setOverlayRect(null);
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const left = rect.left - surfaceRect.left + surface.scrollLeft;
+    const top = rect.top - surfaceRect.top + surface.scrollTop;
+    setOverlayRect({
+      left,
+      top,
+      width: rect.width,
+      height: rect.height,
+      kind: shapeContainer ? "shape" : "image",
+    });
+  }, [getSelectedImageContainer, getSelectedShapeContainer, selectedImageId, selectedShapeId]);
+
+  useEffect(() => {
+    updateOverlayRect();
+  }, [updateOverlayRect, contentHtml, selectedImageId, selectedShapeId]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const onScroll = () => updateOverlayRect();
+    const onResize = () => updateOverlayRect();
+    editor.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onResize, { passive: true });
+    return () => {
+      editor.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize);
+    };
+  }, [updateOverlayRect]);
+
+  const beginResize = (handle: "nw" | "ne" | "sw" | "se") => (e: React.PointerEvent) => {
+    const editor = editorRef.current;
+    if (!editor || !overlayRect) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (overlayRect.kind === "image") {
+      const img = getSelectedImage();
+      if (!img) return;
+      const startWidth = Number.parseInt(img.style.width || "", 10) || img.clientWidth || IMAGE_DEFAULT_WIDTH;
+      pointerResizeRef.current = {
+        pointerId: e.pointerId,
+        kind: "image",
+        handle,
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth,
+      };
+      editor.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    const container = getSelectedShapeContainer();
+    if (!container) return;
+    const startScale = Number.parseFloat(container.dataset.noteShapeScale || "1") || 1;
+    pointerResizeRef.current = {
+      pointerId: e.pointerId,
+      kind: "shape",
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScale,
+    };
+    editor.setPointerCapture(e.pointerId);
+  };
+
+  const handleSurfacePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    const resize = pointerResizeRef.current;
+    if (!editor || !resize || resize.pointerId !== e.pointerId) return;
+
+    e.preventDefault();
+    const dx = e.clientX - resize.startX;
+    const direction = resize.handle === "ne" || resize.handle === "se" ? 1 : -1;
+    const delta = dx * direction;
+
+    if (resize.kind === "image") {
+      const img = getSelectedImage();
+      if (!img) return;
+      const nextWidth = clampImageWidth((resize.startWidth || IMAGE_DEFAULT_WIDTH) + delta);
+      img.style.width = `${nextWidth}px`;
+      setSelectedImageWidth(nextWidth);
+      syncEditorContent();
+      updateOverlayRect();
+      return;
+    }
+
+    const container = getSelectedShapeContainer();
+    if (!container) return;
+    const base = resize.startScale || 1;
+    const nextScale = Math.max(0.5, Math.min(3, Math.round((base + delta / 260) * 100) / 100));
+    setShapeScale(nextScale);
+    setShapeTransform({ scale: nextScale });
+    updateOverlayRect();
+  };
+
+  const handleSurfacePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    const resize = pointerResizeRef.current;
+    if (editor && resize && resize.pointerId === e.pointerId) {
+      pointerResizeRef.current = null;
+      try {
+        editor.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   const createShapeSvg = useCallback((shape: NoteShape, strokeColor: string) => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -693,6 +966,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     setSelectedImageId(null);
     setSelectedImageWidth(null);
     setSelectedShapeId(null);
+    setImageFlipX(false);
+    setImageFlipY(false);
 
     if (editorRef.current) {
       editorRef.current.innerHTML = initialHtml || "<p><br></p>";
@@ -703,6 +978,17 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   useEffect(() => {
     updateSelectedImageVisual(selectedImageId);
   }, [selectedImageId, updateSelectedImageVisual]);
+
+  useEffect(() => {
+    if (!selectedImageId) return;
+    const img = getSelectedImage();
+    if (!img) return;
+    const flipX = img.dataset.noteFlipX === "true";
+    const flipY = img.dataset.noteFlipY === "true";
+    setImageFlipX(flipX);
+    setImageFlipY(flipY);
+    applyImageTransformStyles(img);
+  }, [applyImageTransformStyles, getSelectedImage, selectedImageId]);
 
   useEffect(() => {
     updateSelectedShapeVisual(selectedShapeId);
@@ -780,6 +1066,100 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
             <option value="22">22</option>
             <option value="28">28</option>
           </select>
+
+          <select
+            value={fontWeight}
+            onChange={(e) => {
+              const next = e.target.value;
+              setFontWeight(next);
+              wrapSelectionWithSpanStyle({ "font-weight": next });
+            }}
+            className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            aria-label="Grossura do texto"
+          >
+            <option value="400">Peso (400)</option>
+            <option value="500">Peso (500)</option>
+            <option value="600">Peso (600)</option>
+            <option value="700">Peso (700)</option>
+            <option value="800">Peso (800)</option>
+          </select>
+
+          <div className="flex items-center gap-2 rounded-md border border-input bg-background px-2 py-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => {
+                wrapSelectionWithSpanStyle({
+                  "box-shadow": `inset 0 -${markerThickness}px 0 ${markerColor}`,
+                  "border-radius": "2px",
+                });
+              }}
+              aria-label="Marca texto"
+            >
+              <Highlighter className="h-3.5 w-3.5" />
+            </Button>
+            <input
+              type="color"
+              value={markerColor}
+              onChange={(e) => setMarkerColor(e.target.value)}
+              className="h-7 w-7 cursor-pointer rounded-md border border-input bg-background p-0"
+              aria-label="Cor do marca texto"
+            />
+            <select
+              value={String(markerThickness)}
+              onChange={(e) => setMarkerThickness(Number(e.target.value))}
+              className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+              aria-label="Grossura do marca texto"
+            >
+              <option value="4">4px</option>
+              <option value="6">6px</option>
+              <option value="8">8px</option>
+              <option value="10">10px</option>
+              <option value="12">12px</option>
+              <option value="16">16px</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-md border border-input bg-background px-2 py-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => {
+                wrapSelectionWithSpanStyle({
+                  "text-decoration-line": "underline",
+                  "text-decoration-color": underlineDecorColor,
+                  "text-decoration-thickness": `${underlineDecorThickness}px`,
+                  "text-underline-offset": "2px",
+                });
+              }}
+              aria-label="Sublinhado destacado"
+            >
+              <Underline className="h-3.5 w-3.5" />
+            </Button>
+            <input
+              type="color"
+              value={underlineDecorColor}
+              onChange={(e) => setUnderlineDecorColor(e.target.value)}
+              className="h-7 w-7 cursor-pointer rounded-md border border-input bg-background p-0"
+              aria-label="Cor do sublinhado destacado"
+            />
+            <select
+              value={String(underlineDecorThickness)}
+              onChange={(e) => setUnderlineDecorThickness(Number(e.target.value))}
+              className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+              aria-label="Grossura do sublinhado destacado"
+            >
+              <option value="1">1px</option>
+              <option value="2">2px</option>
+              <option value="3">3px</option>
+              <option value="4">4px</option>
+              <option value="6">6px</option>
+            </select>
+          </div>
 
           <div className="flex items-center gap-2">
             <Label htmlFor="note-font-color" className="text-xs text-muted-foreground">Cor</Label>
@@ -1024,7 +1404,12 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
         )}
       </div>
 
-      <div className="relative">
+      <div
+        ref={editorSurfaceRef}
+        className="relative"
+        onPointerMove={handleSurfacePointerMove}
+        onPointerUp={handleSurfacePointerUp}
+      >
         {isEditorEmpty && (
           <span className="pointer-events-none absolute left-3 top-2.5 text-sm text-slate-400">
             Escreva suas anotações aqui...
@@ -1039,12 +1424,144 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
           onKeyUp={rememberSelection}
           onBlur={rememberSelection}
           onClick={handleEditorClick}
+          onPointerDown={handleEditorPointerDown}
+          onPointerMove={(e) => {
+            handleEditorPointerMove(e);
+            handleSurfacePointerMove(e);
+          }}
+          onPointerUp={(e) => {
+            handleEditorPointerUp(e);
+            handleSurfacePointerUp(e);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== "Delete" && e.key !== "Backspace") return;
+            if (selectedImageId) {
+              e.preventDefault();
+              removeSelectedImage();
+              return;
+            }
+            if (selectedShapeId) {
+              e.preventDefault();
+              removeSelectedShape();
+            }
+          }}
           className={cn(
             "note-editor rounded-md border border-input bg-white px-3 py-2 text-sm text-slate-900 caret-slate-900 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             expanded ? "min-h-[65vh] sm:min-h-[70vh]" : "min-h-[170px]",
             gridEnabled && "note-grid",
           )}
         />
+
+        {overlayRect && (
+          <div
+            className="pointer-events-none absolute"
+            style={{
+              left: overlayRect.left,
+              top: overlayRect.top,
+              width: overlayRect.width,
+              height: overlayRect.height,
+            }}
+          >
+            <div className="pointer-events-auto absolute -left-1 -top-1 note-block-overlay-handle" onPointerDown={beginResize("nw")} />
+            <div className="pointer-events-auto absolute -right-1 -top-1 note-block-overlay-handle" onPointerDown={beginResize("ne")} />
+            <div className="pointer-events-auto absolute -left-1 -bottom-1 note-block-overlay-handle" onPointerDown={beginResize("sw")} />
+            <div className="pointer-events-auto absolute -right-1 -bottom-1 note-block-overlay-handle" onPointerDown={beginResize("se")} />
+
+            {overlayRect.kind === "shape" && (
+              <div className="pointer-events-auto absolute -top-10 left-0 flex items-center gap-1 rounded-md border border-border bg-background/95 px-2 py-1 shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = (shapeRotation - 15 + 360) % 360;
+                    setShapeRotation(next);
+                    setShapeTransform({ rotate: next });
+                  }}
+                  aria-label="Girar -15°"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = (shapeRotation + 15) % 360;
+                    setShapeRotation(next);
+                    setShapeTransform({ rotate: next });
+                  }}
+                  aria-label="Girar +15°"
+                >
+                  <RotateCw className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = !shapeFlipX;
+                    setShapeFlipX(next);
+                    setShapeTransform({ flipX: next });
+                  }}
+                  aria-label="Espelhar horizontal"
+                >
+                  <FlipHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = !shapeFlipY;
+                    setShapeFlipY(next);
+                    setShapeTransform({ flipY: next });
+                  }}
+                  aria-label="Espelhar vertical"
+                >
+                  <FlipVertical className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+
+            {overlayRect.kind === "image" && (
+              <div className="pointer-events-auto absolute -top-10 left-0 flex items-center gap-1 rounded-md border border-border bg-background/95 px-2 py-1 shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = !imageFlipX;
+                    setImageFlipX(next);
+                    setImageFlip({ flipX: next });
+                  }}
+                  aria-label="Espelhar horizontal"
+                >
+                  <FlipHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    const next = !imageFlipY;
+                    setImageFlipY(next);
+                    setImageFlip({ flipY: next });
+                  }}
+                  aria-label="Espelhar vertical"
+                >
+                  <FlipVertical className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 pt-1">

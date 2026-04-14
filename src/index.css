@@ -111,6 +111,12 @@
     max-width: 100%;
   }
 
+  .note-editor figure[data-note-image-container],
+  .note-editor figure[data-note-shape-container] {
+    cursor: grab;
+    user-select: none;
+  }
+
   .note-editor figure[data-note-shape-container],
   .note-rich-content figure[data-note-shape-container] {
     margin: 0.5rem 0;
@@ -136,17 +142,27 @@
   }
 
   .note-editor.note-grid {
-    /* Grid estilo "bloco de notas": preto em qualquer tema */
+    /* Grid estilo "papel quadriculado": preto em qualquer tema */
     --note-grid-color: rgba(0, 0, 0, 0.22);
-    --note-grid-color-major: rgba(0, 0, 0, 0.36);
+    --note-grid-color-major: rgba(0, 0, 0, 0.38);
+    --note-grid-size: 28px;
+    --note-grid-major-every: 5;
     background-image:
-      linear-gradient(to right, var(--note-grid-color) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--note-grid-color) 1px, transparent 1px),
-      linear-gradient(to right, var(--note-grid-color-major) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--note-grid-color-major) 1px, transparent 1px);
-    background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
+      repeating-linear-gradient(to right, var(--note-grid-color) 0 1px, transparent 1px var(--note-grid-size)),
+      repeating-linear-gradient(to bottom, var(--note-grid-color) 0 1px, transparent 1px var(--note-grid-size)),
+      repeating-linear-gradient(to right, var(--note-grid-color-major) 0 2px, transparent 2px calc(var(--note-grid-size) * var(--note-grid-major-every))),
+      repeating-linear-gradient(to bottom, var(--note-grid-color-major) 0 2px, transparent 2px calc(var(--note-grid-size) * var(--note-grid-major-every)));
     background-position: 0 0;
     background-attachment: local;
+  }
+
+  .note-block-overlay-handle {
+    width: 10px;
+    height: 10px;
+    border-radius: 0.25rem;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--primary));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   }
 
   .note-editor ul,
