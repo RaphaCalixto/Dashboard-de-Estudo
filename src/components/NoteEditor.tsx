@@ -131,6 +131,7 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
   const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number; kind: "image" | "shape" } | null>(
     null,
   );
+  const syncRafRef = useRef<number | null>(null);
 
   const getImageWidth = useCallback((img: HTMLImageElement) => {
     const parsed = Number.parseInt(img.style.width || "", 10);
@@ -240,6 +241,23 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     setContentHtml(sanitizeNoteHtml(editor.innerHTML));
   }, [normalizeEditorImages]);
 
+  const scheduleSyncEditorContent = useCallback(() => {
+    if (syncRafRef.current) return;
+    syncRafRef.current = window.requestAnimationFrame(() => {
+      syncRafRef.current = null;
+      syncEditorContent();
+    });
+  }, [syncEditorContent]);
+
+  useEffect(() => {
+    return () => {
+      if (syncRafRef.current) {
+        window.cancelAnimationFrame(syncRafRef.current);
+        syncRafRef.current = null;
+      }
+    };
+  }, []);
+
   const setShapeTransform = useCallback((next: Partial<{ rotate: number; scale: number; flipX: boolean; flipY: boolean }>) => {
     const container = getSelectedShapeContainer();
     if (!container) return;
@@ -259,8 +277,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     container.dataset.noteShapeFlipX = String(flipX);
     container.dataset.noteShapeFlipY = String(flipY);
     applyShapeTransformStyles(container);
-    syncEditorContent();
-  }, [applyShapeTransformStyles, getSelectedShapeContainer, syncEditorContent]);
+    scheduleSyncEditorContent();
+  }, [applyShapeTransformStyles, getSelectedShapeContainer, scheduleSyncEditorContent]);
 
   const moveCursorToEnd = useCallback(() => {
     const editor = editorRef.current;
@@ -362,8 +380,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     img.dataset.noteFlipX = String(flipX);
     img.dataset.noteFlipY = String(flipY);
     applyImageTransformStyles(img);
-    syncEditorContent();
-  }, [applyImageTransformStyles, getSelectedImage, syncEditorContent]);
+    scheduleSyncEditorContent();
+  }, [applyImageTransformStyles, getSelectedImage, scheduleSyncEditorContent]);
 
   const setCursorAfterNode = useCallback((node: Node) => {
     const selection = window.getSelection();
@@ -525,7 +543,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     if (beforeNode === drag.container) return;
 
     editor.insertBefore(drag.container, beforeNode);
-    syncEditorContent();
+    scheduleSyncEditorContent();
+    updateOverlayRect();
   };
 
   const handleEditorPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -533,6 +552,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     const drag = pointerDragRef.current;
     if (editor && drag && drag.pointerId === e.pointerId) {
       pointerDragRef.current = null;
+      syncEditorContent();
+      updateOverlayRect();
       try {
         editor.releasePointerCapture(e.pointerId);
       } catch {
@@ -572,7 +593,7 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
 
   useEffect(() => {
     updateOverlayRect();
-  }, [updateOverlayRect, contentHtml, selectedImageId, selectedShapeId]);
+  }, [updateOverlayRect, selectedImageId, selectedShapeId]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -641,7 +662,7 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
       const nextWidth = clampImageWidth((resize.startWidth || IMAGE_DEFAULT_WIDTH) + delta);
       img.style.width = `${nextWidth}px`;
       setSelectedImageWidth(nextWidth);
-      syncEditorContent();
+      scheduleSyncEditorContent();
       updateOverlayRect();
       return;
     }
@@ -660,6 +681,8 @@ export function NoteEditor({ note, showMathTools, expanded, onSave, onCancel, on
     const resize = pointerResizeRef.current;
     if (editor && resize && resize.pointerId === e.pointerId) {
       pointerResizeRef.current = null;
+      syncEditorContent();
+      updateOverlayRect();
       try {
         editor.releasePointerCapture(e.pointerId);
       } catch {
